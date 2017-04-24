@@ -8,10 +8,11 @@ Serialize Vapor models into JSONAPI compliant structures.
 import Vapor
 import JSONAPISerializer
 
-let config = JSONAPIConfig()
-let userSerializer = JSONAPISerializer(config: config)
+let config = JSONAPIConfig(type: "users")
+let serializer = JSONAPISerializer(config: config)
 
-try userSerializer.serialize(user)
+let users: [User]...
+try serializer.serialize(users)
 ```
 
 ### Produces
