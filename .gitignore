@@ -1,6 +1,6 @@
-Packages
-.build
-xcuserdata
-*.xcodeproj
-Config/secrets
 .DS_Store
+/.build
+/Packages
+/*.xcodeproj
+.swift-version
+Package.pins
