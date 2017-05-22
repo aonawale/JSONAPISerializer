@@ -1,4 +1,4 @@
-import Vapor
+import JSON
 
 public struct JSONAPIConfig {
     let id: String
@@ -6,9 +6,8 @@ public struct JSONAPIConfig {
     let whitelist: [String]
     let blacklist: [String]
     let relationships: [String: JSONAPIConfig]
-
     let topLevelLinks: JSON
-    let linksFor: (_ model: Model) -> JSON
+    let linksFor: (_ object: Object) -> JSON
     let topLevelMeta: JSON
 
     public init(
@@ -17,7 +16,7 @@ public struct JSONAPIConfig {
         whitelist: [String] = [],
         blacklist: [String] = [],
         relationships: [String: JSONAPIConfig] = [:],
-        linksFor: ((_ model: Model) -> JSON)? = nil,
+        linksFor: ((_ object: Object) -> JSON)? = nil,
         topLevelLinks: JSON? = nil,
         topLevelMeta: JSON = JSON(Node([:]))
     ) {
@@ -29,7 +28,6 @@ public struct JSONAPIConfig {
 
         self.topLevelLinks = topLevelLinks ?? JSON(Node(["self": Node("/\(type)")]))
         self.linksFor = linksFor ?? {
-            let type = type(of: $0)
             return JSON(Node("/\(type)/\($0.id ?? "")"))
         }
         self.topLevelMeta = topLevelMeta

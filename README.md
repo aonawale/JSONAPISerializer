@@ -1,11 +1,11 @@
-# JSONAPISerializer for Vapor
+# JSONAPISerializer for Server Side Swift
 
-Serialize Vapor models into JSONAPI compliant structures.
+Serialize Swift models into JSONAPI compliant structures.
 
 ## Basic usage
 
 ```swift
-import Vapor
+import JSON
 import JSONAPISerializer
 
 let config = JSONAPIConfig(type: "users")
@@ -39,9 +39,9 @@ try serializer.serialize(users)
 ## Relationships
 
 ```swift
-let toysConfig = JSONAPIConfig(type: "toys")
-let petsConfig = JSONAPIConfig(type: "pets", relationships: ["toys": toysConfig])
-let userConfig = JSONAPIConfig(type: "users", relationships: ["pets": petsConfig])
+let petsConfig = JSONAPIConfig(type: "pets")
+let profileConfig = JSONAPIConfig(type: "profiles", relationships: ["pets": petsConfig])
+let userConfig = JSONAPIConfig(type: "users", relationships: ["profile": profileConfig])
 let serializer = JSONAPISerializer(config: userConfig)
 
 let users: [User]...
@@ -51,39 +51,73 @@ try serializer.serialize(users)
 ### Produces
 ```
 {
-  "data": [{
-    "type": "users",
-    "id": "1",
-    "attributes": {
-      "first-name": "foo",
-      "last-name": "bar"
+  "data": [
+    {
+      "id": 2,
+      "type": "users",
+      "attributes": {
+        "first-name": "foo",
+        "last-name": "bar"
+      },
+      "relationships": {
+        "profile": {
+          "data": {
+            "id": 2,
+            "type": "profiles"
+          }
+        }
+      }
     }
-  }, {
-    "type": "users",
-    "id": "2",
-    "attributes": {
-      "first-name": "John",
-      "last-name": "Doe"
-    }
-  }],
+  ],
   "included": [
     {
       "attributes": {
-        "name": "dog",
-        "user_id": 1
+        "age": 18,
+        "user-id": 2,
       },
-      "id": 1,
+      "id": 2,
+      "relationships": {
+        "pets": {
+          "data": [
+            {
+              "id": 5,
+              "type": "pets"
+            },
+            {
+              "id": 8,
+              "type": "pets"
+            }
+          ]
+        }
+      },
+      "type": "profiles"
+    },
+    {
+      "attributes": {
+        "pet-name": "dog",
+        "profile-id": 2
+      },
+      "id": 5,
+      "relationships": {},
       "type": "pets"
     },
     {
       "attributes": {
-        "name": "bone",
-        "pet_id": 1
+        "pet-name": "cat",
+        "profile-id": 2
       },
-      "id": 1,
-      "type": "toys"
+      "id": 8,
+      "relationships": {},
+      "type": "pets"
     }
-  ]
+  ],
+  "jsonapi": {
+    "version": "1.0"
+  },
+  "links": {
+    "self": "/users"
+  },
+  "meta": {}
 }
 ```
 
