@@ -2,11 +2,11 @@ import JSON
 import XCTest
 @testable import JSONAPISerializer
 
-class User: Object {
+class User: JSONRepresentable {
     var id: Node?
-    var profile: Profile?
     let firstName: String
     let lastName: String
+    var profile: Profile?
     var pets: [Pet] = []
     
     init(firstName: String, lastName: String) {
@@ -28,7 +28,7 @@ class User: Object {
     }
 }
 
-class Profile: Object {
+struct Profile: JSONRepresentable {
     var id: Node?
     let userId: String
     
@@ -45,7 +45,7 @@ class Profile: Object {
     }
 }
 
-class Pet: Object {
+class Pet: JSONRepresentable {
     var id: Node?
     let name: String
     let userId: String
@@ -67,7 +67,7 @@ class Pet: Object {
     }
 }
 
-class Toy: Object {
+struct Toy: JSONRepresentable {
     var id: Node?
     let name: String
     let petId: String
@@ -89,6 +89,7 @@ class Toy: Object {
 
 class JSONAPISerializerTests: XCTestCase {
     static let allTests = [
+        ("testMissingIdError", testMissingIdError),
         ("testToOneRelationship", testToOneRelationship),
         ("testToManyRelationship", testToManyRelationship),
         ("testWhitelist", testWhitelist),
@@ -97,12 +98,31 @@ class JSONAPISerializerTests: XCTestCase {
         ("testSerilizeSingleObject", testSerilizeSingleObject)
     ]
     
+    func testMissingIdError() {
+        let user = User(firstName: "foo", lastName: "bar")
+        let config = JSONAPIConfig(type: "users", id: "uid")
+        let serializer = JSONAPISerializer(config: config)
+        
+        XCTAssertThrowsError(try serializer.serialize(user))
+        
+        XCTAssertThrowsError(try serializer.serialize(user), "") {
+            guard let error = $0 as? JSONAPISerializer.Error else {
+                fatalError("Unexpected Error \($0) thrown")
+            }
+            switch error {
+            case .missing(idKey: let id, in: _, config: let config):
+                XCTAssertEqual(id, config.id)
+            default: break
+            }
+        }
+    }
+    
     func testToOneRelationship() throws {
         let user = User(firstName: "foo", lastName: "bar")
         let profile = Profile(userId: user.id!.string!)
         user.profile = profile
         
-        let profileConfig = JSONAPIConfig(id: "profile-id", type: "user-profile")
+        let profileConfig = JSONAPIConfig(type: "user-profile", id: "profile-id")
         let userConfig = JSONAPIConfig(type: "users", relationships: ["profile": profileConfig])
         let serializer = JSONAPISerializer(config: userConfig)
         let serialized = try serializer.serialize(user)
@@ -147,7 +167,7 @@ class JSONAPISerializerTests: XCTestCase {
     }
     
     func testSerilizeManyObjects() throws {
-        let users = (1...3).map { User(firstName: "foo\($0)", lastName: "bar\($0)") }
+        let users = (0..<3).map { User(firstName: "foo\($0)", lastName: "bar\($0)") }
         let config = JSONAPIConfig(type: "users")
         let serializer = JSONAPISerializer(config: config)
         let serialized = try serializer.serialize(users)
@@ -155,8 +175,8 @@ class JSONAPISerializerTests: XCTestCase {
         
         for (index, data) in serialized["data"]!.array!.enumerated() {
             XCTAssertEqual(data["type"], "users")
-            XCTAssertEqual(data["attributes"]?["first-name"]?.string, "foo\(index + 1)")
-            XCTAssertEqual(data["attributes"]?["last-name"]?.string, "bar\(index + 1)")
+            XCTAssertEqual(data["attributes"]?["first-name"]?.string, "foo\(index)")
+            XCTAssertEqual(data["attributes"]?["last-name"]?.string, "bar\(index)")
         }
     }
     
