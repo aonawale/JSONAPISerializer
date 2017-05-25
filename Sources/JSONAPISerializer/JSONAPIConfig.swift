@@ -7,16 +7,16 @@ public struct JSONAPIConfig {
     let blacklist: [String]
     let relationships: [String: JSONAPIConfig]
     let topLevelLinks: JSON
-    let linksFor: (_ object: Object) -> JSON
+    let linksFor: ((_ object: JSONRepresentable) -> JSON)?
     let topLevelMeta: JSON
 
     public init(
-        id: String = "id",
         type: String,
+        id: String = "id",
         whitelist: [String] = [],
         blacklist: [String] = [],
         relationships: [String: JSONAPIConfig] = [:],
-        linksFor: ((_ object: Object) -> JSON)? = nil,
+        linksFor: ((_ object: JSONRepresentable) -> JSON)? = nil,
         topLevelLinks: JSON? = nil,
         topLevelMeta: JSON = JSON(Node([:]))
     ) {
@@ -27,9 +27,7 @@ public struct JSONAPIConfig {
         self.relationships = relationships
 
         self.topLevelLinks = topLevelLinks ?? JSON(Node(["self": Node("/\(type)")]))
-        self.linksFor = linksFor ?? {
-            return JSON(Node("/\(type)/\($0.id ?? "")"))
-        }
+        self.linksFor = linksFor
         self.topLevelMeta = topLevelMeta
     }
 }
