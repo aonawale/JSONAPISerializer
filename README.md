@@ -1,12 +1,26 @@
 # JSONAPISerializer for Server Side Swift
 
-Serialize Swift models into JSONAPI compliant structures.
+Serialize Swift objects into JSONAPI compliant structures.
 
 ## Basic usage
 
 ```swift
 import JSON
 import JSONAPISerializer
+
+struct User: JSONRepresentable {
+    var id: Node?
+    let firstName: String
+    let lastName: String
+
+    func makeJSON() throws -> JSON {
+        var json = JSON([:])
+        try json.set("id", id)
+        try json.set("first-name", firstName)
+        try json.set("last-name", lastName)
+        return json
+    }
+}
 
 let config = JSONAPIConfig(type: "users")
 let serializer = JSONAPISerializer(config: config)
@@ -32,7 +46,14 @@ try serializer.serialize(users)
       "first-name": "John",
       "last-name": "Doe"
     }
-  }]
+  }],
+  "jsonapi": {
+    "version": "1.0"
+  },
+  "links": {
+    "self": "/users"
+  },
+  "meta": {}
 }
 ```
 
