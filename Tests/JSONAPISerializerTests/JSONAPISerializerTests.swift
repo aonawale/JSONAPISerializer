@@ -89,6 +89,7 @@ struct Toy: JSONRepresentable {
 
 class JSONAPISerializerTests: XCTestCase {
     static let allTests = [
+        ("testRelationshipAsString", testRelationshipAsString),
         ("testMissingIdError", testMissingIdError),
         ("testToOneRelationship", testToOneRelationship),
         ("testToManyRelationship", testToManyRelationship),
@@ -97,6 +98,17 @@ class JSONAPISerializerTests: XCTestCase {
         ("testSerilizeManyObjects", testSerilizeManyObjects),
         ("testSerilizeSingleObject", testSerilizeSingleObject)
     ]
+    
+    func testRelationshipAsString() throws {
+        let user = User(firstName: "foo", lastName: "bar")
+        let profile = Profile(userId: user.id!.string!)
+        let config = JSONAPIConfig(type: "profile", id: "profile-id",
+                                          relationships: ["user-id": JSONAPIConfig(type: "users")])
+        let serializer = JSONAPISerializer(config: config)
+        let serialized = try serializer.serialize(profile)
+        
+        XCTAssertNotNil(serialized["data"]?["relationships"]?["user-id"])
+    }
     
     func testMissingIdError() {
         let user = User(firstName: "foo", lastName: "bar")

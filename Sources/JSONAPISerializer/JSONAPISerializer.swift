@@ -2,19 +2,19 @@ import JSON
 
 public class JSONAPISerializer {
     static let version = "1.0"
-    
+
     public enum Error: Swift.Error {
         case missing(idKey: String, in: Node, config: JSONAPIConfig)
         case invalid(json: Node, config: JSONAPIConfig)
     }
-    
+
     /// The configuration used when serializing objects
     let config: JSONAPIConfig
 
     public init(config: JSONAPIConfig) {
         self.config = config
     }
-    
+
     /// Invoke this method with an array of objects conforming to `JSONRepresentable`s
     /// protocol to get a JSONAPI compliant `JSON` representation of the objects.
     /// - Parameters:
@@ -46,7 +46,7 @@ public class JSONAPISerializer {
         let included = try serialize(included: object)
         return try build(data: serialized, options: options, included: included)
     }
-    
+
     private func serialize(object: JSONRepresentable) throws -> Node {
         let node = try object.makeJSON().makeNode(in: nil)
         return try serialize(node: node, config: config)
@@ -64,7 +64,7 @@ public class JSONAPISerializer {
         }
         return json
     }
-    
+
     private func serialize(included object: JSONRepresentable) throws -> Node {
         let node = try object.makeJSON().makeNode(in: nil)
         var included = [Node]()
@@ -109,33 +109,36 @@ public class JSONAPISerializer {
         guard let id = object[config.id] else {
             throw Error.missing(idKey: config.id, in: node, config: config)
         }
-        
+
         var attributes = Node([:])
         var relationships = Node([:])
-        
+
         for (key, value) in object where key != config.id && !config.blacklist.contains(key) {
 
-            if let relationConfig = config.relationships[key] {
+            if let config = config.relationships[key] {
                 if let object = value.pathIndexableObject {
-                    let data = try serialize(relationship: Node(object), config: relationConfig)
+                    let data = try serialize(relationship: Node(object), config: config)
                     relationships[key] = Node(["data": data])
                 } else if let array = value.pathIndexableArray {
-                    let data = try Node(array.map { try serialize(relationship: $0, config: relationConfig) })
+                    let data = try Node(array.map { try serialize(relationship: $0, config: config) })
+                    relationships[key] = Node(["data": data])
+                } else if let id = value.string {
+                    let data = try serialize(relationship: Node(["id": .string(id)]), config: config)
                     relationships[key] = Node(["data": data])
                 }
                 continue
             }
-            
+
             if !config.whitelist.isEmpty {
                 if config.whitelist.contains(key) {
                     attributes[key] = value
                 }
                 continue
             }
-            
+
             attributes[key] = value
         }
-        
+
         return try Node(node: [
             "id": id,
             "type": config.type,
