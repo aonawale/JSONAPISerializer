@@ -2,6 +2,7 @@ import JSON
 
 public struct JSONAPIConfig {
     let id: String
+    let key: String?
     let type: String
     let whitelist: [String]
     let blacklist: [String]
@@ -12,6 +13,7 @@ public struct JSONAPIConfig {
 
     public init(
         type: String,
+        key: String? = nil,
         id: String = "id",
         whitelist: [String] = [],
         blacklist: [String] = [],
@@ -19,8 +21,9 @@ public struct JSONAPIConfig {
         linksFor: ((_ object: JSONRepresentable) -> JSON)? = nil,
         topLevelLinks: JSON? = nil,
         topLevelMeta: JSON = JSON(Node([:]))
-    ) {
+        ) {
         self.id = id
+        self.key = key
         self.type = type
         self.whitelist = whitelist
         self.blacklist = blacklist
