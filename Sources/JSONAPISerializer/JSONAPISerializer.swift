@@ -116,15 +116,16 @@ public class JSONAPISerializer {
         for (key, value) in object where key != config.id && !config.blacklist.contains(key) {
 
             if let config = config.relationships[key] {
+                let relationKey = config.key ?? key
                 if let object = value.pathIndexableObject {
                     let data = try serialize(relationship: Node(object), config: config)
-                    relationships[key] = Node(["data": data])
+                    relationships[relationKey] = Node(["data": data])
                 } else if let array = value.pathIndexableArray {
                     let data = try Node(array.map { try serialize(relationship: $0, config: config) })
-                    relationships[key] = Node(["data": data])
+                    relationships[relationKey] = Node(["data": data])
                 } else if let id = value.string {
                     let data = try serialize(relationship: Node(["id": .string(id)]), config: config)
-                    relationships[key] = Node(["data": data])
+                    relationships[relationKey] = Node(["data": data])
                 }
                 continue
             }

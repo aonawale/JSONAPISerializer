@@ -3,14 +3,14 @@ import XCTest
 @testable import JSONAPISerializer
 
 class User: JSONRepresentable {
-    var id: Node?
+    var id: String?
     let firstName: String
     let lastName: String
     var profile: Profile?
     var pets: [Pet] = []
     
     init(firstName: String, lastName: String) {
-        id = Node.string(UUID().uuidString)
+        id = UUID().uuidString
         self.firstName = firstName
         self.lastName = lastName
     }
@@ -89,6 +89,7 @@ struct Toy: JSONRepresentable {
 
 class JSONAPISerializerTests: XCTestCase {
     static let allTests = [
+        ("testCustomRelationshipKey", testCustomRelationshipKey),
         ("testRelationshipAsString", testRelationshipAsString),
         ("testMissingIdError", testMissingIdError),
         ("testToOneRelationship", testToOneRelationship),
@@ -99,9 +100,24 @@ class JSONAPISerializerTests: XCTestCase {
         ("testSerilizeSingleObject", testSerilizeSingleObject)
     ]
     
+    func testCustomRelationshipKey() throws {
+        let user = User(firstName: "foo", lastName: "bar")
+        let profile = Profile(userId: user.id!)
+        user.profile = profile
+        
+        let profileConfig = JSONAPIConfig(type: "profiles", key: "user-profile", id: "profile-id")
+        let userConfig = JSONAPIConfig(type: "users", relationships: ["profile": profileConfig])
+        let serializer = JSONAPISerializer(config: userConfig)
+        let serialized = try serializer.serialize(user)
+        
+        XCTAssertNil(serialized["data"]?["relationships"]?["profile"])
+        XCTAssertNotNil(serialized["data"]?["relationships"]?["user-profile"])
+        XCTAssertEqual(serialized["included"]?[0]?["type"], "profiles")
+    }
+    
     func testRelationshipAsString() throws {
         let user = User(firstName: "foo", lastName: "bar")
-        let profile = Profile(userId: user.id!.string!)
+        let profile = Profile(userId: user.id!)
         let config = JSONAPIConfig(type: "profile", id: "profile-id",
                                           relationships: ["user-id": JSONAPIConfig(type: "users")])
         let serializer = JSONAPISerializer(config: config)
@@ -131,7 +147,7 @@ class JSONAPISerializerTests: XCTestCase {
     
     func testToOneRelationship() throws {
         let user = User(firstName: "foo", lastName: "bar")
-        let profile = Profile(userId: user.id!.string!)
+        let profile = Profile(userId: user.id!)
         user.profile = profile
         
         let profileConfig = JSONAPIConfig(type: "user-profile", id: "profile-id")
@@ -146,7 +162,7 @@ class JSONAPISerializerTests: XCTestCase {
     
     func testToManyRelationship() throws {
         let user = User(firstName: "foo", lastName: "bar")
-        let pet = Pet(name: "pet", userId: user.id!.string!)
+        let pet = Pet(name: "pet", userId: user.id!)
         pet.toys = [Toy(name: "toy", petId: pet.id!.string!)]
         user.pets = [pet]
         
