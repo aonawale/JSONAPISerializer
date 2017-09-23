@@ -77,7 +77,7 @@ public class JSONAPISerializer {
             throw Error.invalid(json: data, config: config)
         }
 
-        for (key, value) in object where config.relationships[key] != nil {
+        for (key, value) in object where config.relationships[key] != nil && !config.blacklist.contains(key) {
             let relationConfig = config.relationships[key]!
 
             if let _ = value.pathIndexableObject {
