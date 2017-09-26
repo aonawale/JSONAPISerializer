@@ -77,7 +77,17 @@ public class JSONAPISerializer {
             throw Error.invalid(json: data, config: config)
         }
 
-        for (key, value) in object where config.relationships[key] != nil && !config.blacklist.contains(key) {
+        for (key, value) in object where config.relationships[key] != nil  {
+            if !config.whitelist.isEmpty {
+                if !config.whitelist.contains(key) {
+                    continue
+                }
+            }
+
+            if config.blacklist.contains(key) {
+                continue
+            }
+
             let relationConfig = config.relationships[key]!
 
             if let _ = value.pathIndexableObject {
@@ -113,26 +123,28 @@ public class JSONAPISerializer {
         var attributes = Node([:])
         var relationships = Node([:])
 
-        for (key, value) in object where key != config.id && !config.blacklist.contains(key) {
-
-            if let config = config.relationships[key] {
-                let relationKey = config.key ?? key
-                if let object = value.pathIndexableObject {
-                    let data = try serialize(relationship: Node(object), config: config)
-                    relationships[relationKey] = Node(["data": data])
-                } else if let array = value.pathIndexableArray {
-                    let data = try Node(array.map { try serialize(relationship: $0, config: config) })
-                    relationships[relationKey] = Node(["data": data])
-                } else if let id = value.string {
-                    let data = try serialize(relationship: Node(["id": .string(id)]), config: config)
-                    relationships[relationKey] = Node(["data": data])
+        for (key, value) in object where key != config.id {
+            if !config.whitelist.isEmpty {
+                if !config.whitelist.contains(key) {
+                    continue
                 }
+            }
+
+            if config.blacklist.contains(key) {
                 continue
             }
 
-            if !config.whitelist.isEmpty {
-                if config.whitelist.contains(key) {
-                    attributes[key] = value
+            if let config = config.relationships[key] {
+                let customKey = config.key ?? key
+                if let object = value.pathIndexableObject {
+                    let data = try serialize(relationship: Node(object), config: config)
+                    relationships[customKey] = Node(["data": data])
+                } else if let array = value.pathIndexableArray {
+                    let data = try Node(array.map { try serialize(relationship: $0, config: config) })
+                    relationships[customKey] = Node(["data": data])
+                } else if let id = value.string {
+                    let data = try serialize(relationship: Node(["id": .string(id)]), config: config)
+                    relationships[customKey] = Node(["data": data])
                 }
                 continue
             }
