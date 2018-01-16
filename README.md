@@ -30,7 +30,7 @@ try serializer.serialize(users)
 ```
 
 ### Produces
-```
+```js
 {
   "data": [{
     "type": "users",
@@ -70,7 +70,7 @@ try serializer.serialize(users)
 ```
 
 ### Produces
-```
+```js
 {
   "data": [
     {
